@@ -67,3 +67,14 @@ def ContaAtributos(classes, dados, atributos):
 			r[b] = 0
 		resp.append(r)
 	return resp
+
+#calcular entropia a partir de uma base de dados DATA(incompleto, falta fazer a comunicação a partir do metodo CarregaDados)
+def entropy(data):
+  from math import log
+  log2 = lambda x:log(x)/log(2) # Para que manja Logaritmos se aproveitamos da troca de base.
+  results = uniquecounts(data) #Usamos a função uniquicounts para contar as classes do conjunto.
+  ent = 0.0
+  for r in results.keys():
+      p = float(results[r])/len(data)
+      ent = ent-(p*log2(p))#Calculamos a entropia aqui.
+  return ent
