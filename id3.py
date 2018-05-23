@@ -31,3 +31,39 @@ def get_nome_cabecalho_mapa_indice(headers):
 		nome_indice[headers[i]] = i
 		indice_nome[i] = headers[i]
 	return indice_nome, nome_indice	
+
+
+# carrega as classes e os dados
+def CarregaDados(arquivoNome):
+	dados = []
+	with open(arquivoNome) as arquivo:
+	    lines = arquivo.read().split()
+	classes = lines.pop(0).split(';')
+	dados = [i.split(';') for i in lines]
+	return classes, dados
+
+# mapeia todos os atributos possiveis (somente strings por enquanto)
+def DefineAtributos(classes,dados):
+	resp = []
+	cont = 0
+	for c in classes:
+		ex = []
+		for l in dados:
+			if type(l) != int:
+				ex.append(l[cont])
+			else:
+				ex.append('num')
+		cont+=1
+		ex = list(set(ex))
+		resp.append(ex)
+	return resp
+
+# começa a contagem de atributos (incompleto)
+def ContaAtributos(classes, dados, atributos):
+	resp = []
+	for a in atributos:
+		r = {}
+		for b in a:
+			r[b] = 0
+		resp.append(r)
+	return resp
