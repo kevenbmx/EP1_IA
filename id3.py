@@ -84,7 +84,7 @@ def get_classes(data, atributo_alvo):
 	return classes
 
 #entropia deft (com mais atributos) para calcular especificamente da particao 
-def entropy_part(n, classes):
+def entropyII(n, classes):
 	ent = 0
 	for classe in classes.keys():
 		p = clases[classe]/ n	
@@ -120,15 +120,60 @@ def  entropia_conjunto(data, atributo, atributo_alvo):
 		particionado = particoes[chave_particao]
 		tamanho_part = len(particionado['linhas'])
 		classes_part = get_classes(particionado, atributo_alvo)
-		entropia_part = entropy_part(tamanho_part, classes_part)
+		entropia_part = entropyII(tamanho_part, classes_part)
 		ent_conj += tamanho_part/(n*entropia_part)
 	return ent_conj, particoes
+
 
 #retorna classe mais comun 
 def classe_mais_pala(classes)
 	pala = max(classes, key=lambda k:classes[k])
 	return pala
 
+def id3(data, unicos, restantes, alvo):
+	classes = get_classes(data, alvo) #carrega um dicionario baseado na classe alvo
+	no={} #sendo uma arvore o no que esta sendo avaliado
+
+	if len(classes.keys())==1:
+		no['classe']=next(iter(classes.keys()))
+		return no
+	if len(restantes) == 0:
+		no['classe']=classe_mais_pala(classes)
+		return no
+	n = len(data['linhas'])
+	ent = entropyII(n, classes)
+
+	max_ganho = None
+	max_atributo = None
+	max_paticoes = None
+	#resto é o atributo que dentro dos atributos restantes
+	for resto in restantes:
+		ent_conj, particoes = entropia_conjunto(data, resto,alvo)
+		ganho = ent - ent_conj
+		if max_ganho is None or ganho > max_ganho:
+			max_ganho=ganho
+			max_atributo = resto
+			max_paticoes = particoes
+
+	if max_ganho is None:
+		no['classe']=classe_mais_pala(classes)
+		return no
+
+	no['atributo']=max_atributo
+	no['nodes']= {} #armazenara a subarvore ou seja o no percorrido 
+	#atributos restantes na subarvore abaixo
+	restantes_subarvores = set(restantes)
+	restantes_subarvores.discard(max_atributo)
+
+	valores_unicos = unicos[max_atributo] #atributos unicos no conjunto passado
+
+	for valor in valores_unicos:
+		if valor not in max_paticoes.keys():
+			no['nodes'][valor] = {'classe':classe_mais_pala(classes)}
+			continue
+		particoes = max_paticoes[valor]
+		no['nodes'][valor] = id3(particoes, unicos, restantes_subarvores, alvo)
+	return no
 
 #calcular entropia a partir de uma base de dados DATA(incompleto, falta fazer a comunicação a partir do metodo CarregaDados)
 def entropy(data):
@@ -149,6 +194,15 @@ def CarregaDados (arquivoNome):
 	classes = lines.pop(0).split(';')
 	dados = [i.split(';') for i in lines]
 	return classes, dados
+
+#carrega configuracao da arvore arquivo que facilita adaptar o script para qualquer conjuto de dados
+def configuracao(arquivoConfig):
+	#ast o módulo ast ajuda  a processar árvores da gramática de sintaxe abstrata (Abstract Sintax Trees)
+	with open(arquivoConfig, 'r') as arquivo:
+		data = arquivo.read().repalce('\n', '')#retira linhas
+	return ast.literal_eval(data)
+#verifica se consisti apenas nas seguintes estruturas literais de Python: strings, números, tuplas, listas, dicts, booleanos e None.
+
 
 # mapeia todos os atributos possiveis (somente strings por enquanto)
 def DefineAtributos (classes,dados):
@@ -239,6 +293,10 @@ def Ganho(atributosDescricao,atributos,classes):
 		resp[classes[i]] = ganho
 	return resp
 
+
+
+
 def main():
 	argv = sys.argv
     print("Command line args {}: ".format(argv))
+ if __name__ == "__main__": main()
