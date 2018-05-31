@@ -55,17 +55,80 @@ def projeta_colunas(data, colunas_projeta):
 			'nome_indice': nome_indice,
 			'indice_nome': indice_nome}
 
-#retorna valor sem repticoes	
+#retorna mapa valor sem repticoes dentro do database	
 def get_valor_unico(data):
 	indice_nome = data['nome_indice']
 	indices = indice_nome.keys()
-	mapa_de_valor = {}
+	mapa_de_valor = {}	
 	for indice in iter(indices):
 		mapa_de_valor[indice_nome] = set()
-
+	#constroi mapa de valor de acordo com indice
 	for l_data in data['linhas']:
 		for indice in indice_nome.keys()
-			
+			atributo_nome = indice_nome[indice]
+			valor = l_data[indice]
+			if valor not in mapa_de_valor.keys()
+				mapa_de_valor[atributo_nome].add(valor)
+	return mapa_de_valor					
+#retornar os rotulos das clases
+def get_classes(data, atributo_alvo):
+	linhas = data['linhas']
+	id_coluna = data['nome_indice'][atributo_alvo]
+	classes = {}
+	for l in linhas:
+		valor = l[id_coluna]
+		if valor in classes:
+			classes[valor] = classes[valor]+1
+		else:
+			classes[valor] = 1
+	return classes
+
+#entropia deft (com mais atributos) para calcular especificamente da particao 
+def entropy_part(n, classes):
+	ent = 0
+	for classe in classes.keys():
+		p = clases[classe]/ n	
+		ent += - p * math.log(p, 2)
+		return ent	
+
+
+#particiona o conjuto de dados por grupo de atributos
+def particao(data, grupo_atributo):
+	paticao = {}
+	linhas = data['linhas']
+	indice_atributo = data['nome_indice'][grupo_atributo]
+	for l in linhas:
+		valor_linha = l[indice_atributo]
+		if valor_linha not in paticao.keys()
+			particao[valor_linha] =  {
+				'nome_indice':data['nome_indice']
+				'indice_nome':data['indice_nome']
+				'linhas':list()
+			}
+		particao[valor_linha]['linhas'].append(l)
+	return particao
+
+
+def  entropia_conjunto(data, atributo, atributo_alvo):
+	linhas = data['linhas']
+	n = len(linhas)
+	particoes = particao(data, atributo)
+
+	ent_conj = 0
+
+	for chave_particao in particoes.keys():
+		particionado = particoes[chave_particao]
+		tamanho_part = len(particionado['linhas'])
+		classes_part = get_classes(particionado, atributo_alvo)
+		entropia_part = entropy_part(tamanho_part, classes_part)
+		ent_conj += tamanho_part/(n*entropia_part)
+	return ent_conj, particoes
+
+#retorna classe mais comun 
+def classe_mais_pala(classes)
+	pala = max(classes, key=lambda k:classes[k])
+	return pala
+
 
 #calcular entropia a partir de uma base de dados DATA(incompleto, falta fazer a comunicação a partir do metodo CarregaDados)
 def entropy(data):
@@ -77,9 +140,6 @@ def entropy(data):
       p = float(results[r])/len(data)
       ent = ent-(p*log2(p))#Calculamos a entropia aqui.
   return ent
-
-
-
 
 # carrega as classes e os dados
 def CarregaDados (arquivoNome):
