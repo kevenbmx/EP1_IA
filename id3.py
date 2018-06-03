@@ -21,14 +21,14 @@ def carrega_csv(nome_arquivo):
 		'header': headers,
 		'linhas': linhas[1:],
 		'nome_indice': nome_indice,
-		'indice_nome': indice_nome;
+		'indice_nome': indice_nome	
 	}
 	return data
 
 #Cria um mapa Dado um cabeçalho tem se um indice e vice e verca
 def get_nome_cabecalho_mapa_indice(headers):
-	indice_nome = {}
 	nome_indice = {}
+	indice_nome = {}
 	for i in range(0, len(headers)):
 		nome_indice[headers[i]] = i
 		indice_nome[i] = headers[i]
@@ -37,7 +37,7 @@ def get_nome_cabecalho_mapa_indice(headers):
 #projecao das colunas
 def projeta_colunas(data, colunas_projeta):
 	#lista com cabeçalhos e linhas ldata linha, rdata Headers
-	h_data = list(data['headers'])
+	h_data = list(data['header'])
 	l_data = list(data['linhas'])
 	todas_col = list(range(0, len(h_data)))
 
@@ -51,23 +51,23 @@ def projeta_colunas(data, colunas_projeta):
 
 	indice_nome, nome_indice = get_nome_cabecalho_mapa_indice(h_data)
 	
-	return {'header': h_data, 'linhas' l_data,
+	return {'header': h_data, 'linhas': l_data,
 			'nome_indice': nome_indice,
 			'indice_nome': indice_nome}
 
 #retorna mapa valor sem repticoes dentro do database	
 def get_valor_unico(data):
-	indice_nome = data['nome_indice']
+	indice_nome = data['indice_nome']
 	indices = indice_nome.keys()
 	mapa_de_valor = {}	
 	for indice in iter(indices):
-		mapa_de_valor[indice_nome] = set()
-	#constroi mapa de valor de acordo com indice
-	for l_data in data['linhas']:
-		for indice in indice_nome.keys()
+		mapa_de_valor[indice_nome[indice]] = set()
+#constroi mapa de valor de acordo com indice
+	for data_linha in data['linhas']:
+		for indice in indice_nome.keys():
 			atributo_nome = indice_nome[indice]
-			valor = l_data[indice]
-			if valor not in mapa_de_valor.keys()
+			valor = data_linha[indice]
+			if valor not in mapa_de_valor.keys():
 				mapa_de_valor[atributo_nome].add(valor)
 	return mapa_de_valor					
 #retornar os rotulos das clases
@@ -87,23 +87,23 @@ def get_classes(data, atributo_alvo):
 def entropyII(n, classes):
 	ent = 0
 	for classe in classes.keys():
-		p = clases[classe]/ n	
+		p = classes[classe]/ n	
 		ent += - p * math.log(p, 2)
 		return ent	
 
 
 #particiona o conjuto de dados por grupo de atributos
-def particao(data, grupo_atributo):
-	paticao = {}
+def particao_conjunto(data, grupo_atributo):
+	particao = {}
 	linhas = data['linhas']
 	indice_atributo = data['nome_indice'][grupo_atributo]
 	for l in linhas:
 		valor_linha = l[indice_atributo]
-		if valor_linha not in paticao.keys()
+		if valor_linha not in particao.keys():
 			particao[valor_linha] =  {
-				'nome_indice':data['nome_indice']
-				'indice_nome':data['indice_nome']
-				'linhas':list()
+				'nome_indice': data['nome_indice'],
+				'indice_nome': data['indice_nome'],	
+				'linhas': list()
 			}
 		particao[valor_linha]['linhas'].append(l)
 	return particao
@@ -112,7 +112,7 @@ def particao(data, grupo_atributo):
 def  entropia_conjunto(data, atributo, atributo_alvo):
 	linhas = data['linhas']
 	n = len(linhas)
-	particoes = particao(data, atributo)
+	particoes = particao_conjunto(data, atributo)
 
 	ent_conj = 0
 
@@ -121,12 +121,12 @@ def  entropia_conjunto(data, atributo, atributo_alvo):
 		tamanho_part = len(particionado['linhas'])
 		classes_part = get_classes(particionado, atributo_alvo)
 		entropia_part = entropyII(tamanho_part, classes_part)
-		ent_conj += tamanho_part/(n*entropia_part)
+		ent_conj += tamanho_part/ n*entropia_part
 	return ent_conj, particoes
 
 
 #retorna classe mais comun 
-def classe_mais_pala(classes)
+def classe_mais_pala(classes):
 	pala = max(classes, key=lambda k:classes[k])
 	return pala
 
@@ -160,12 +160,13 @@ def id3(data, unicos, restantes, alvo):
 		return no
 
 	no['atributo']=max_atributo
-	no['nodes']= {} #armazenara a subarvore ou seja o no percorrido 
+	#armazenara a subarvore ou seja o no percorrido 
+	no['nodes']= {}
 	#atributos restantes na subarvore abaixo
 	restantes_subarvores = set(restantes)
 	restantes_subarvores.discard(max_atributo)
-
-	valores_unicos = unicos[max_atributo] #atributos unicos no conjunto passado
+	#atributos unicos no conjunto passado
+	valores_unicos = unicos[max_atributo]
 
 	for valor in valores_unicos:
 		if valor not in max_paticoes.keys():
@@ -199,104 +200,45 @@ def CarregaDados (arquivoNome):
 def configuracao(arquivoConfig):
 	#ast o módulo ast ajuda  a processar árvores da gramática de sintaxe abstrata (Abstract Sintax Trees)
 	with open(arquivoConfig, 'r') as arquivo:
-		data = arquivo.read().repalce('\n', '')#retira linhas
+		data = arquivo.read()
 	return ast.literal_eval(data)
 #verifica se consisti apenas nas seguintes estruturas literais de Python: strings, números, tuplas, listas, dicts, booleanos e None.
 
 
-# mapeia todos os atributos possiveis (somente strings por enquanto)
-def DefineAtributos (classes,dados):
-	resp = []
-	cont = 0
-	for c in classes:
-		ex = []
-		for d in dados:
-			try:
-				numero = int(d[cont])
-				ex.append('num')
-			except Exception:
-				ex.append(d[cont])		    	
-		cont+=1
-		ex = list(set(ex))
-		ex.sort()
-		resp.append(ex)
-	return resp
+#Funçao que atrzves do no raiz imprime as regras da arvore
+def imprime_lindamente_arvore(raiz):
+	pilha = []
+	regras = set()
 
+	def percorre(no, pilha, regras):
+		if 'classe' in no:
+			pilha.append(' ENTAO:'+no['classe'])
+			regras.add(''.join(pilha))
+			pilha.pop()
+		elif 'atributo' in no:
+			nodata = 'SE ' if not pilha else '->'
+			pilha.append(nodata+no['atributo']+'=')
+			for sub_chave in no['nodes']:
+				pilha.append(sub_chave)
+				percorre(no['nodes'][sub_chave], pilha, regras)
+				pilha.pop()
+			pilha.pop()
 
-'''
-começa a contagem de atributos 
-atributosDescricao indices: 
-	0 = contagem, 
-	1 = contagem da classe1, 
-	2 = contagem da classe2,
-	3 = entropia
-'''
-def AtributosDescricao (classes, dados, atributos):
-	resp = []
-	for a in atributos:
-		r = {}
-		for b in a:
-			r[b] = [0, 0, 0, 0]
-		resp.append(r)
-	for d in dados:
-		j = dados.index(d)
-		for a in d:
-			i = d.index(a)
-			try:
-				numero = int(a)
-				# 							IMPLEMENTAR
-			except Exception:
-				aux = resp[i]
-				aux2 = aux[a]
-				aux2[0]+=1
-				#print (d[len(d)-1])
-				atri = atributos[len(atributos)-1]
-				if d[len(d)-1] == atri[0]:
-					aux2[1]+=1
-				else:
-					aux2[2]+=1
-	return resp
-
-# carrega em atributosDescricao a entropia de todos os atributos
-def Entropia(atributosDescricao,atributos):
-	resp = atributosDescricao
-	for ad in resp:
-		a = atributos[resp.index(ad)]
-		for b in a:
-			atual = ad[b]
-			try:
-				entropiaP =  - ((atual[1]/atual[0]) * (log(atual[1]/atual[0])/log(2)))
-			except Exception:
-				entropiaP = 0
-			try:
-				entropiaN =  - ((atual[2]/atual[0]) * (log(atual[2]/atual[0])/log(2)))
-			except Exception:
-				entropiaN = 0
-			atual[3] = entropiaP + entropiaN
-	return resp
-
-# calcula o ganho de todas as classes
-def Ganho(atributosDescricao,atributos,classes):
-	resp = {}
-	aux = atributosDescricao[len(atributosDescricao)-1]
-	aux1 = atributos[len(atributos)-1]
-	a1 = aux[aux1[0]]
-	a2 = aux[aux1[1]]
-	total = a1[0]+a2[0]
-	entropiaTotal = - ((a1[0]/total) * (log(a1[0]/total)/log(2))) - ((a2[0]/total) * (log(a2[0]/total)/log(2)))
-	for ad in atributosDescricao:
-		ganho = entropiaTotal
-		for a in ad:
-			b = ad[a]
-			ganho -= (b[0]/total)*b[3]
-		i = atributosDescricao.index(ad)
-		resp[classes[i]] = ganho
-	return resp
-
-
-
+	percorre(raiz, pilha, regras)
+	print(os.linesep.join(regras))
 
 def main():
 	argv = sys.argv
-    print("Command line args {}: ".format(argv))
- if __name__ == "__main__": main()
+	print("Command line args {}: ".format(argv))
+	config=configuracao(argv[1])
+	data = carrega_csv(config['data_file'])
+	data = projeta_colunas(data, config['projecao_colunas'])
+	atributo_alvo = config['atributo_alvo']
+	restantes = set(data['header'])
+	restantes.remove(atributo_alvo)
+	unicos = get_valor_unico(data)
+	raiz = id3(data, unicos, restantes, atributo_alvo)
+	imprime_lindamente_arvore(raiz)
+
+	
+if __name__ == "__main__": main()
