@@ -228,6 +228,7 @@ def imprime_lindamente_arvore(raiz):
 	print(os.linesep.join(regras))
 erro = 0
 def count_erro(raiz, teste, atributo_alvo):
+	global erro 
 	erro = 0
 	exemplos = teste['linhas']
 	indices = teste['nome_indice']
@@ -235,12 +236,12 @@ def count_erro(raiz, teste, atributo_alvo):
 		global erro
 		if 'classe' in no:
 			if no['classe'] is not exemplo[indices[atributo_alvo]]:
-				erro+=1	
+				erro+=1
 		elif 'atributo' in no:
 				sub_chave = exemplo[indices[no['atributo']]]
 				percorre(no['nodes'][sub_chave], exemplo, indices, atributo_alvo)
 	for exemplo in exemplos:
-		 percorre(raiz, exemplo, indices, atributo_alvo):
+		 percorre(raiz, exemplo, indices, atributo_alvo)
 	return erro
 
 def main():
@@ -256,7 +257,6 @@ def main():
 	folds = cross_validation_part(data['linhas'], k, n_exemplos)
 	treinamento=[]
 	tamanho_folds = len(folds)
-	print(tamanho_folds)
 	erroFolds=[]*tamanho_folds
 	#apos ter splitado os dados testa o fold e avalia o erro
 	for fold in folds:
@@ -276,16 +276,19 @@ def main():
 		unicos = get_valor_unico(data)
 		raiz = id3(data, unicos, restantes, atributo_alvo)
 		erro = count_erro(raiz, teste, atributo_alvo)
-		erroFolds.append(erro/len(teste['linhas']))
+		erroFolds.append(erro/tamanho_folds)
 	#calcula a media de erro do folds e padrao
 	media_erro = sum(erroFolds)/k
+	#print(media_erro)
 	erro_padrao = math.sqrt((media_erro*(1-media_erro))/n_exemplos)
 	# intervalo para 95% de confianca para estimativa do erro verdadeiro
 	min_range = media_erro-(1.96*erro_padrao)
-	max_range = media_erro+(1.96*erro_padrao)	
+	max_range = media_erro+(1.96*erro_padrao)
 	#imprime_lindamente_arvore(raiz)
 	print("---------------------------------******************DESCRICAO DE ERROS*************------------------------------------")
-	print("Media erro:")
-	print(media_erro)
-	print("Intervalode de:"+min_range+"<ERRO VERDADEIRO<"+max_range)
+	media_erro=round(media_erro,2)
+	print("Media erro:{0}".format(media_erro))
+	min_range=round(min_range,2)
+	max_range=round(max_range,2)
+	print("Intervalode de:{0}<ERRO VERDADEIRO<{1}".format(min_range,max_range))
 if __name__ == "__main__": main()
