@@ -226,23 +226,22 @@ def imprime_lindamente_arvore(raiz):
 
 	percorre(raiz, pilha, regras)
 	print(os.linesep.join(regras))
-
-
+erro = 0
 def count_erro(raiz, teste, atributo_alvo):
 	erro = 0
 	exemplos = teste['linhas']
 	indices = teste['nome_indice']
-	def percorre(no, erro, exemplo, indices, atributo_alvo):
+	def percorre(no, exemplo, indices, atributo_alvo):
+		global erro
 		if 'classe' in no:
 			if no['classe'] is not exemplo[indices[atributo_alvo]]:
-				erro+=1
+				erro+=1	
 		elif 'atributo' in no:
 				sub_chave = exemplo[indices[no['atributo']]]
-				percorre(no['nodes'][sub_chave], erro, exemplo, indices, atributo_alvo)
+				percorre(no['nodes'][sub_chave], exemplo, indices, atributo_alvo)
 	for exemplo in exemplos:
-		percorre(raiz, erro, exemplo, indices, atributo_alvo)
+		 percorre(raiz, exemplo, indices, atributo_alvo):
 	return erro
-
 
 def main():
 	argv = sys.argv
@@ -257,6 +256,7 @@ def main():
 	folds = cross_validation_part(data['linhas'], k, n_exemplos)
 	treinamento=[]
 	tamanho_folds = len(folds)
+	print(tamanho_folds)
 	erroFolds=[]*tamanho_folds
 	#apos ter splitado os dados testa o fold e avalia o erro
 	for fold in folds:
@@ -268,6 +268,7 @@ def main():
 			treinamento +=folds[i] #CHUPA BRUNO!!!!!!!!
 		data['linhas'] = treinamento
 		#aplica o id3 no conjunto de treinamento 
+		raiz = {}
 		data = projeta_colunas(data, config['projecao_colunas'])
 		atributo_alvo = config['atributo_alvo']
 		restantes = set(data['header'])
@@ -282,8 +283,9 @@ def main():
 	# intervalo para 95% de confianca para estimativa do erro verdadeiro
 	min_range = media_erro-(1.96*erro_padrao)
 	max_range = media_erro+(1.96*erro_padrao)	
-	imprime_lindamente_arvore(raiz)
+	#imprime_lindamente_arvore(raiz)
 	print("---------------------------------******************DESCRICAO DE ERROS*************------------------------------------")
-	print("Media erro:"+media_erro+)
+	print("Media erro:")
+	print(media_erro)
 	print("Intervalode de:"+min_range+"<ERRO VERDADEIRO<"+max_range)
 if __name__ == "__main__": main()
