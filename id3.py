@@ -4,7 +4,8 @@ import sys
 import math
 import os
 from math import log
-
+from kFold.kFoldCrossValidation import *
+from random import seed
 #metodo que extrai dados do csv
 def carrega_csv(nome_arquivo):
 	caminho = os.path.normpath(os.getcwd() + nome_arquivo)
@@ -191,9 +192,9 @@ def entropy(data):
 def CarregaDados (arquivoNome):
 	dados = []
 	with open(arquivoNome) as arquivo:
-	    lines = arquivo.read().split()
-	classes = lines.pop(0).split(';')
-	dados = [i.split(';') for i in lines]
+	    linha = arquivo.read().split()
+	classes = linhas.pop(0).split(';')
+	dados = [i.split(';') for i in linhas]
 	return classes, dados
 
 #carrega configuracao da arvore arquivo que facilita adaptar o script para qualquer conjuto de dados
@@ -209,7 +210,6 @@ def configuracao(arquivoConfig):
 def imprime_lindamente_arvore(raiz):
 	pilha = []
 	regras = set()
-
 	def percorre(no, pilha, regras):
 		if 'classe' in no:
 			pilha.append(' ENTAO:'+no['classe'])
@@ -227,18 +227,63 @@ def imprime_lindamente_arvore(raiz):
 	percorre(raiz, pilha, regras)
 	print(os.linesep.join(regras))
 
+
+def count_erro(raiz, teste, atributo_alvo):
+	erro = 0
+	exemplos = teste['linhas']
+	indices = teste['nome_indice']
+	def percorre(no, erro, exemplo, indices, atributo_alvo):
+		if 'classe' in no:
+			if no['classe'] is not exemplo[indices[atributo_alvo]]:
+				erro+=1
+		elif 'atributo' in no:
+				sub_chave = exemplo[indices[no['atributo']]]
+				percorre(no['nodes'][sub_chave], erro, exemplo, indices, atributo_alvo)
+	for exemplo in exemplos:
+		percorre(raiz, erro, exemplo, indices, atributo_alvo)
+	return erro
+
+
 def main():
 	argv = sys.argv
 	print("Command line args {}: ".format(argv))
 	config=configuracao(argv[1])
 	data = carrega_csv(config['data_file'])
-	data = projeta_colunas(data, config['projecao_colunas'])
-	atributo_alvo = config['atributo_alvo']
-	restantes = set(data['header'])
-	restantes.remove(atributo_alvo)
-	unicos = get_valor_unico(data)
-	raiz = id3(data, unicos, restantes, atributo_alvo)
-	imprime_lindamente_arvore(raiz)
 
-	
+	#Kfolds Cross Validation
+	seed(42)
+	k = config['kFolds']
+	n_exemplos = config['n_exemplos']
+	folds = cross_validation_part(data['linhas'], k, n_exemplos)
+	treinamento=[]
+	tamanho_folds = len(folds)
+	erroFolds=[]*tamanho_folds
+	#apos ter splitado os dados testa o fold e avalia o erro
+	for fold in folds:
+		data['linhas'] = fold
+		teste = data.copy()
+		folds.remove(fold)
+
+		for i in range(len(folds)):
+			treinamento +=folds[i] #CHUPA BRUNO!!!!!!!!
+		data['linhas'] = treinamento
+		#aplica o id3 no conjunto de treinamento 
+		data = projeta_colunas(data, config['projecao_colunas'])
+		atributo_alvo = config['atributo_alvo']
+		restantes = set(data['header'])
+		restantes.remove(atributo_alvo)
+		unicos = get_valor_unico(data)
+		raiz = id3(data, unicos, restantes, atributo_alvo)
+		erro = count_erro(raiz, teste, atributo_alvo)
+		erroFolds.append(erro/len(teste['linhas']))
+	#calcula a media de erro do folds e padrao
+	media_erro = sum(erroFolds)/k
+	erro_padrao = math.sqrt((media_erro*(1-media_erro))/n_exemplos)
+	# intervalo para 95% de confianca para estimativa do erro verdadeiro
+	min_range = media_erro-(1.96*erro_padrao)
+	max_range = media_erro+(1.96*erro_padrao)	
+	imprime_lindamente_arvore(raiz)
+	print("---------------------------------******************DESCRICAO DE ERROS*************------------------------------------")
+	print("Media erro:"+media_erro+)
+	print("Intervalode de:"+min_range+"<ERRO VERDADEIRO<"+max_range)
 if __name__ == "__main__": main()
