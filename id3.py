@@ -257,6 +257,7 @@ def main():
 	folds = cross_validation_part(data['linhas'], k, n_exemplos)
 	treinamento=[]
 	tamanho_folds = len(folds)
+	tm_fold = n_exemplos/k
 	erroFolds=[]*tamanho_folds
 	#apos ter splitado os dados testa o fold e avalia o erro
 	for fold in folds:
@@ -276,19 +277,18 @@ def main():
 		unicos = get_valor_unico(data)
 		raiz = id3(data, unicos, restantes, atributo_alvo)
 		erro = count_erro(raiz, teste, atributo_alvo)
-		erroFolds.append(erro/tamanho_folds)
-	#calcula a media de erro do folds e padrao
+		erroFolds.append(erro/tm_fold)
+	#calcula a media de erro do folds e  erro padrao
 	media_erro = sum(erroFolds)/k
-	#print(media_erro)
 	erro_padrao = math.sqrt((media_erro*(1-media_erro))/n_exemplos)
 	# intervalo para 95% de confianca para estimativa do erro verdadeiro
 	min_range = media_erro-(1.96*erro_padrao)
 	max_range = media_erro+(1.96*erro_padrao)
 	#imprime_lindamente_arvore(raiz)
 	print("---------------------------------******************DESCRICAO DE ERROS*************------------------------------------")
-	media_erro=round(media_erro,2)
+	media_erro=round(media_erro,3)
 	print("Media erro:{0}".format(media_erro))
-	min_range=round(min_range,2)
-	max_range=round(max_range,2)
+	min_range=round(min_range,3)
+	max_range=round(max_range,3)
 	print("Intervalode de:{0}<ERRO VERDADEIRO<{1}".format(min_range,max_range))
 if __name__ == "__main__": main()
