@@ -1,12 +1,34 @@
-import ast
-import csv
-import sys
-import math
-import os
+  #    _    ______   ___  _________________________  _  __  _________  ________
+  #   (_)__/ /_  /  / _ \/ __/ ___/  _/ __/  _/ __ \/ |/ / /_  __/ _ \/ __/ __/
+  #  / / _  //_ <  / // / _// /___/ /_\ \_/ // /_/ /    /   / / / , _/ _// _/  
+  # /_/\_,_/____/ /____/___/\___/___/___/___/\____/_/|_/   /_/ /_/|_/___/___/  
+                                                                             
+
+ #  ____  _ _     _ _       _                     
+ # | __ )(_) |__ | (_) ___ | |_ ___  ___ __ _ ___ 
+ # |  _ \| | '_ \| | |/ _ \| __/ _ \/ __/ _` / __|
+ # | |_) | | |_) | | | (_) | ||  __/ (_| (_| \__ \
+ # |____/|_|_.__/|_|_|\___/ \__\___|\___\__,_|___/
+                                                
+import ast #verifica se o da set consisti apenas nas seguintes estruturas literais de Python: strings, números, e etc...
+import csv #modulo para leitura de csv
+import sys #impresso do sistema
+import math #para calculo matematico simples
+import os #ajuda a junatar linhas impressas
 from math import log
-from kFold.kFoldCrossValidation import *
-from random import seed
-#metodo que extrai dados do csv
+from kFold.kFoldCrossValidation import * # modulo de k fold cross validation em outra pasta
+from random import seed # para montar os folds radomicamnete 
+
+
+#    ___                                    _              _   __ _                     
+#   / __\   _ _ __   ___ ___   ___  ___    /_\  _   ___  _(_) / /(_) __ _ _ __ ___  ___ 
+#  / _\| | | | '_ \ / __/ _ \ / _ \/ __|  //_\\| | | \ \/ / |/ / | |/ _` | '__/ _ \/ __|
+# / /  | |_| | | | | (_| (_) |  __/\__ \ /  _  \ |_| |>  <| / /__| | (_| | | |  __/\__ \
+# \/    \__,_|_| |_|\___\___/ \___||___/ \_/ \_/\__,_/_/\_\_\____/_|\__,_|_|  \___||___/
+                                                                                      
+
+
+#metodo que extrai dados do csv e retorna dicionario data
 def carrega_csv(nome_arquivo):
 	caminho = os.path.normpath(os.getcwd() + nome_arquivo)
 	arquivo = csv.reader(open(caminho))
@@ -15,9 +37,10 @@ def carrega_csv(nome_arquivo):
 	for l in arquivo:
 		linhas.append(l)
 
-	headers = linhas[0]
-	indice_nome, nome_indice =  get_nome_cabecalho_mapa_indice(headers)
-
+	headers = linhas[0]#pega o cabecalho do data set 
+	#ppara percorrer lista de atributos
+	indice_nome, nome_indice =  get_nome_cabecalho_mapa_indice(headers)#dado um nome de um cabecalho retorna o indice e vice e versa
+	#dicionario que armazena o data set com chaves como: o cabecalho, linhas(exemplos) e indices para nomes
 	data = {
 		'header': headers,
 		'linhas': linhas[1:],
@@ -26,7 +49,7 @@ def carrega_csv(nome_arquivo):
 	}
 	return data
 
-#Cria um mapa Dado um cabeçalho tem se um indice e vice e verca
+#Cria um mapa Dado um cabecalho tem se um indice e vice e verca
 def get_nome_cabecalho_mapa_indice(headers):
 	nome_indice = {}
 	indice_nome = {}
@@ -35,46 +58,53 @@ def get_nome_cabecalho_mapa_indice(headers):
 		indice_nome[i] = headers[i]
 	return indice_nome, nome_indice	
 
-#projecao das colunas
+#projecao das colunas para trabalhar como se fosse umma lista, percorre o data set e pega as colunas desejadas na configuracao
 def projeta_colunas(data, colunas_projeta):
 	#lista com cabeçalhos e linhas ldata linha, rdata Headers
 	h_data = list(data['header'])
 	l_data = list(data['linhas'])
+	#todas as colunas
 	todas_col = list(range(0, len(h_data)))
-
+	# indice das colunas que serao porjetadas 
 	projeta_colunas_idx = [data['nome_indice'][nome] for nome in colunas_projeta]
+	#seleciona de todas as colunas aquelas que serao porjetadas para remover o resto
 	remove_colunas = [col_idx for col_idx in todas_col if col_idx not in projeta_colunas_idx]
-
+	#ordena e remove as colunas nao mencionadas no arquivo configuracao
 	for deleta_col in sorted(remove_colunas, reverse=True):
 		del h_data[deleta_col]
 		for l in l_data:
 			del r[deleta_col]
-
+	#retorna um mapa de indice pra cada coluna
 	indice_nome, nome_indice = get_nome_cabecalho_mapa_indice(h_data)
-	
+	#retorna o data set
 	return {'header': h_data, 'linhas': l_data,
 			'nome_indice': nome_indice,
 			'indice_nome': indice_nome}
 
-#retorna mapa valor sem repticoes dentro do database	
+#retorna mapa de valor sem repticoes dentro do data set para uso do id3
 def get_valor_unico(data):
 	indice_nome = data['indice_nome']
 	indices = indice_nome.keys()
 	mapa_de_valor = {}	
+	#cria uma posicao para cada indice dentro de mapa valor
 	for indice in iter(indices):
 		mapa_de_valor[indice_nome[indice]] = set()
-#constroi mapa de valor de acordo com indice
+# percorre  linhas e constroi mapa de valor de acordo com indice
 	for data_linha in data['linhas']:
 		for indice in indice_nome.keys():
 			atributo_nome = indice_nome[indice]
 			valor = data_linha[indice]
+			#caso não esteja no mapa adiciona
 			if valor not in mapa_de_valor.keys():
 				mapa_de_valor[atributo_nome].add(valor)
 	return mapa_de_valor					
+
 #retornar os rotulos das clases
 def get_classes(data, atributo_alvo):
 	linhas = data['linhas']
+	#retorna o indice do atributo alvo 
 	id_coluna = data['nome_indice'][atributo_alvo]
+	#dicionario com valor das classes
 	classes = {}
 	for l in linhas:
 		valor = l[id_coluna]
@@ -130,6 +160,12 @@ def  entropia_conjunto(data, atributo, atributo_alvo):
 def classe_mais_pala(classes):
 	pala = max(classes, key=lambda k:classes[k])
 	return pala
+
+#    _______  ____
+#   /  _/ _ \|_  /
+#  _/ // // //_ < 
+# /___/____/____/ 
+                
 
 def id3(data, unicos, restantes, alvo):
 	classes = get_classes(data, alvo) #carrega um dicionario baseado na classe alvo
@@ -199,7 +235,6 @@ def CarregaDados (arquivoNome):
 
 #carrega configuracao da arvore arquivo que facilita adaptar o script para qualquer conjuto de dados
 def configuracao(arquivoConfig):
-	#ast o módulo ast ajuda  a processar árvores da gramática de sintaxe abstrata (Abstract Sintax Trees)
 	with open(arquivoConfig, 'r') as arquivo:
 		data = arquivo.read()
 	return ast.literal_eval(data)
