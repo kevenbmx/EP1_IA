@@ -263,14 +263,16 @@ def imprime_lindamente_arvore(raiz):
 	print(os.linesep.join(regras))
 erro = 0
 def count_erro(raiz, teste, atributo_alvo):
-	global erro 
+	global erro
 	erro = 0
 	exemplos = teste['linhas']
 	indices = teste['nome_indice']
 	def percorre(no, exemplo, indices, atributo_alvo):
 		global erro
 		if 'classe' in no:
-			if no['classe'] is not exemplo[indices[atributo_alvo]]:
+			print("classe arvore:"+no['classe']+"---"+"exemplo:"+exemplo[indices[atributo_alvo]])
+			if no['classe'] != exemplo[indices[atributo_alvo]]:
+				print("ERROOOWWWW")
 				erro+=1
 		elif 'atributo' in no:
 				sub_chave = exemplo[indices[no['atributo']]]
@@ -279,7 +281,21 @@ def count_erro(raiz, teste, atributo_alvo):
 		 percorre(raiz, exemplo, indices, atributo_alvo)
 	return erro
 
+
+#def numero_no(raiz):
+
+
+
+#                  _       
+#  _ __ ___   __ _(_)_ __  
+# | '_ ` _ \ / _` | | '_ \ 
+# | | | | | | (_| | | | | |
+# |_| |_| |_|\__,_|_|_| |_|
+                         
+
+
 def main():
+	#pega o arquivo de configuracao  e carrega o data set 
 	argv = sys.argv
 	print("Command line args {}: ".format(argv))
 	config=configuracao(argv[1])
@@ -298,10 +314,10 @@ def main():
 	for fold in folds:
 		data['linhas'] = fold
 		teste = data.copy()
-		folds.remove(fold)
-
+		idx_fold = folds.index(fold)
 		for i in range(len(folds)):
-			treinamento +=folds[i] #CHUPA BRUNO!!!!!!!!
+			if i is not idx_fold:
+				treinamento +=folds[i] 
 		data['linhas'] = treinamento
 		#aplica o id3 no conjunto de treinamento 
 		raiz = {}
@@ -311,6 +327,7 @@ def main():
 		restantes.remove(atributo_alvo)
 		unicos = get_valor_unico(data)
 		raiz = id3(data, unicos, restantes, atributo_alvo)
+		#contabiliza erro para arvore gerada
 		erro = count_erro(raiz, teste, atributo_alvo)
 		erroFolds.append(erro/tm_fold)
 	#calcula a media de erro do folds e  erro padrao
@@ -320,10 +337,11 @@ def main():
 	min_range = media_erro-(1.96*erro_padrao)
 	max_range = media_erro+(1.96*erro_padrao)
 	#imprime_lindamente_arvore(raiz)
-	print("---------------------------------******************DESCRICAO DE ERROS*************------------------------------------")
+	print("---------------------------------******************DESCRICAO DE ERROS NO CROS VALIDATION*************------------------------------------")
+	print(erroFolds)
 	media_erro=round(media_erro,3)
 	print("Media erro:{0}".format(media_erro))
 	min_range=round(min_range,3)
-	max_range=round(max_range,3)
+	max_range=round(max_range,3) 
 	print("Intervalode de:{0}<ERRO VERDADEIRO<{1}".format(min_range,max_range))
 if __name__ == "__main__": main()
