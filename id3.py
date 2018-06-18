@@ -17,7 +17,7 @@ import math #para calculo matematico simples
 import os #ajuda a junatar linhas impressas
 from math import log
 from kFold.kFoldCrossValidation import * # modulo de k fold cross validation em outra pasta
-from random import seed # para montar os folds radomicamnete 
+
 
 
 #    ___                                    _              _   __ _                     
@@ -261,6 +261,7 @@ def imprime_lindamente_arvore(raiz):
 
 	percorre(raiz, pilha, regras)
 	print(os.linesep.join(regras))
+
 erro = 0
 def count_erro(raiz, teste, atributo_alvo):
 	global erro
@@ -270,9 +271,7 @@ def count_erro(raiz, teste, atributo_alvo):
 	def percorre(no, exemplo, indices, atributo_alvo):
 		global erro
 		if 'classe' in no:
-			print("classe arvore:"+no['classe']+"---"+"exemplo:"+exemplo[indices[atributo_alvo]])
 			if no['classe'] != exemplo[indices[atributo_alvo]]:
-				print("ERROOOWWWW")
 				erro+=1
 		elif 'atributo' in no:
 				sub_chave = exemplo[indices[no['atributo']]]
@@ -281,11 +280,56 @@ def count_erro(raiz, teste, atributo_alvo):
 		 percorre(raiz, exemplo, indices, atributo_alvo)
 	return erro
 
+node_tree = []
+filhos = []
+def anda_node(raiz):
+	global node_tree
+	global filhos
+	if 'classe' in raiz:
+		filhos = raiz
+	else:
+		node_tree = raiz['nodes']
 
-#def numero_no(raiz):
+#PODA POR ERRO
+def poda(raiz):
+	global node_tree
+	remove_no = node_tree
+	monta_arvore(remove_no, raiz)
+	return raiz
 
 
+folha = 0
+nozin = 0
 
+#Funçao que atrzves do no raiz imprime as regras da arvore
+def imprime_lindamente_arvore_modificada(raiz):
+	pilha = []
+	regras = set()
+	def percorre(no, pilha, regras):
+		global folha
+		global nozin
+		global filhos
+		global node_tree
+		if 'classe' in no:
+			pilha.append(' \tTHEN: '+no['classe'])
+			regras.add(''.join(pilha))
+			pilha.pop()
+			filhos.append(no['classe'])
+			folha+=1
+		elif 'atributo' in no:
+			nodata = 'IF ' if not pilha else ' -> '
+			pilha.append(nodata+no['atributo']+'=')
+			
+			nozin+=1
+			for sub_chave in no['nodes']:
+				pilha.append(sub_chave)
+				percorre(no['nodes'][sub_chave], pilha, regras)
+				node_tree.append(no['atributo'])
+				pilha.pop()
+			pilha.pop()
+	percorre(raiz, pilha, regras)
+	print(os.linesep.join(regras))
+	return folha,nozin
 #                  _       
 #  _ __ ___   __ _(_)_ __  
 # | '_ ` _ \ / _` | | '_ \ 
@@ -300,9 +344,8 @@ def main():
 	print("Command line args {}: ".format(argv))
 	config=configuracao(argv[1])
 	data = carrega_csv(config['data_file'])
-
+	copia_original = data.copy()
 	#Kfolds Cross Validation
-	seed(42)
 	k = config['kFolds']
 	n_exemplos = config['n_exemplos']
 	folds = cross_validation_part(data['linhas'], k, n_exemplos)
@@ -330,18 +373,30 @@ def main():
 		#contabiliza erro para arvore gerada
 		erro = count_erro(raiz, teste, atributo_alvo)
 		erroFolds.append(erro/tm_fold)
+
 	#calcula a media de erro do folds e  erro padrao
+	salva_raiz = raiz
 	media_erro = sum(erroFolds)/k
 	erro_padrao = math.sqrt((media_erro*(1-media_erro))/n_exemplos)
 	# intervalo para 95% de confianca para estimativa do erro verdadeiro
 	min_range = media_erro-(1.96*erro_padrao)
 	max_range = media_erro+(1.96*erro_padrao)
 	#imprime_lindamente_arvore(raiz)
-	print("---------------------------------******************DESCRICAO DE ERROS NO CROS VALIDATION*************------------------------------------")
-	print(erroFolds)
-	media_erro=round(media_erro,3)
+	print("-----------------------------******************DESCRICAO DE ERROS NO  K FOLD CROSS VALIDATION*************------------------------------------")
+
+	media_erro=round(media_erro,4)
 	print("Media erro:{0}".format(media_erro))
-	min_range=round(min_range,3)
-	max_range=round(max_range,3) 
-	print("Intervalode de:{0}<ERRO VERDADEIRO<{1}".format(min_range,max_range))
+	min_range=round(min_range,4)
+	max_range=round(max_range,4	) 
+	print("Intervalo de de:{0}<ERRO VERDADEIRO<{1}".format(min_range,max_range))
+	#Cria aletaoriamente folds de treinamento teste e validacao
+	conjunto_aleatorio = slplit_data_set(copia_original['linhas'], 3) 
+	treinamento = conjunto_aleatorio[0]
+	teste = conjunto_aleatorio[1]
+	validacao = conjunto_aleatorio[2]
+	#faz a poda
+	poda(raiz)
+	folhas, nos = imprime_lindamente_arvore_modificada(salva_raiz)
+	print("Numero de folhas:{0}. Numero de nos internos:{1}".format(folhas, nos))
+	
 if __name__ == "__main__": main()
