@@ -305,30 +305,26 @@ nozin = 0
 def imprime_lindamente_arvore_modificada(raiz):
 	pilha = []
 	regras = set()
-	def percorre(no, pilha, regras):
-		global folha
-		global nozin
-		global filhos
-		global node_tree
+	def percorre(no, pilha, regras,folha,nozin):
+		f = folha
+		n = nozin
 		if 'classe' in no:
 			pilha.append(' \tTHEN: '+no['classe'])
 			regras.add(''.join(pilha))
 			pilha.pop()
-			filhos.append(no['classe'])
-			folha+=1
+			f += 1
 		elif 'atributo' in no:
 			nodata = 'IF ' if not pilha else ' -> '
 			pilha.append(nodata+no['atributo']+'=')
-			
-			nozin+=1
+			n +=1
 			for sub_chave in no['nodes']:
 				pilha.append(sub_chave)
-				percorre(no['nodes'][sub_chave], pilha, regras)
-				node_tree.append(no['atributo'])
+				f,n = percorre(no['nodes'][sub_chave], pilha, regras,f,n)
 				pilha.pop()
 			pilha.pop()
-	percorre(raiz, pilha, regras)
-	#print(os.linesep.join(regras))
+		return f,n
+	folha, nozin = percorre(raiz, pilha, regras,0,0)
+	print(os.linesep.join(regras))
 	return folha,nozin
 #                  _       
 #  _ __ ___   __ _(_)_ __  
@@ -424,7 +420,7 @@ def main():
 	acuracia = 1-taxa_erro
 	acuracia = round(acuracia, 4)
 	print("Acuracia do modelo antes da poda:{0}".format(acuracia))
-	#FUNCAO ERRADA DE CONTAR E TALS
+	#FUNCAO ERRADA DE CONTAR E TALS -----NAO MAAAAAIS----
 	folhas, nos = imprime_lindamente_arvore_modificada(raiz)
 
 	print("Numero de folhas:{0}. Numero de nos internos:{1}".format(folhas, nos))
