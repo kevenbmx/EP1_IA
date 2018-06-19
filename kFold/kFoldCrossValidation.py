@@ -14,11 +14,15 @@ def cross_validation_part(data, folds, n):
 		split.append(fold)
 	return split
 
-def slplit_data_set(data, n):
-	split = data
-	split=[1,2,3]
+def cross_validation_part_poda(data, folds, n):
+	seed(42)
+	fold_tamanho=int(n/folds)
+	copia=data
+	split=list()
+	for i in range(folds):
+		fold = list()
+		while len(fold) < fold_tamanho:
+			index = randrange(len(copia))
+			fold.insert(i, copia.pop(index))
+		split.append(fold)
 	return split
-
-def monta_arvore(remove, raiz):
-	remove = []
-	remove = raiz

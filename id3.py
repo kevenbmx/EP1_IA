@@ -328,7 +328,7 @@ def imprime_lindamente_arvore_modificada(raiz):
 				pilha.pop()
 			pilha.pop()
 	percorre(raiz, pilha, regras)
-	print(os.linesep.join(regras))
+	#print(os.linesep.join(regras))
 	return folha,nozin
 #                  _       
 #  _ __ ___   __ _(_)_ __  
@@ -344,24 +344,26 @@ def main():
 	print("Command line args {}: ".format(argv))
 	config=configuracao(argv[1])
 	data = carrega_csv(config['data_file'])
-	copia_original = data.copy()
+	
 	#Kfolds Cross Validation
 	k = config['kFolds']
 	n_exemplos = config['n_exemplos']
 	folds = cross_validation_part(data['linhas'], k, n_exemplos)
-	treinamento=[]
 	tamanho_folds = len(folds)
 	tm_fold = n_exemplos/k
-	erroFolds=[]*tamanho_folds
+	erroFolds=[]
+	
 	#apos ter splitado os dados testa o fold e avalia o erro
 	for fold in folds:
 		data['linhas'] = fold
 		teste = data.copy()
 		idx_fold = folds.index(fold)
+		treinamento=[]
 		for i in range(len(folds)):
-			if i is not idx_fold:
-				treinamento +=folds[i] 
+			if i != idx_fold:
+				treinamento +=folds[i]
 		data['linhas'] = treinamento
+		print("Fold:{0}-Tamanho do conjunto de Treinamento:{1}-Teste:{2}.".format(idx_fold, len(treinamento), len(fold)))
 		#aplica o id3 no conjunto de treinamento 
 		raiz = {}
 		data = projeta_colunas(data, config['projecao_colunas'])
@@ -372,10 +374,10 @@ def main():
 		raiz = id3(data, unicos, restantes, atributo_alvo)
 		#contabiliza erro para arvore gerada
 		erro = count_erro(raiz, teste, atributo_alvo)
-		erroFolds.append(erro/tm_fold)
+		erroFolds.append(erro/len(fold))
 
 	#calcula a media de erro do folds e  erro padrao
-	salva_raiz = raiz
+	
 	media_erro = sum(erroFolds)/k
 	erro_padrao = math.sqrt((media_erro*(1-media_erro))/n_exemplos)
 	# intervalo para 95% de confianca para estimativa do erro verdadeiro
@@ -383,20 +385,48 @@ def main():
 	max_range = media_erro+(1.96*erro_padrao)
 	#imprime_lindamente_arvore(raiz)
 	print("-----------------------------******************DESCRICAO DE ERROS NO  K FOLD CROSS VALIDATION*************------------------------------------")
-
 	media_erro=round(media_erro,4)
-	print("Media erro:{0}".format(media_erro))
+	print("Media erro:{0}. Acuracia:{1}".format(media_erro, round(1-media_erro,4)))
 	min_range=round(min_range,4)
-	max_range=round(max_range,4	) 
-	print("Intervalo de de:{0}<ERRO VERDADEIRO<{1}".format(min_range,max_range))
-	#Cria aletaoriamente folds de treinamento teste e validacao
-	conjunto_aleatorio = slplit_data_set(copia_original['linhas'], 3) 
-	treinamento = conjunto_aleatorio[0]
-	teste = conjunto_aleatorio[1]
-	validacao = conjunto_aleatorio[2]
-	#faz a poda
-	poda(raiz)
-	folhas, nos = imprime_lindamente_arvore_modificada(salva_raiz)
+	max_range=round(max_range,4) 
+	print("Intervalode:{0}<ERRO VERDADEIRO<{1} para 95'%' de confianca".format(min_range,max_range))
+	
+
+	#Cria aletaoriamente folds de treinamento teste e validacao PARA PODA
+	data = carrega_csv(config['data_file'])
+	conjunto_aleatorio = cross_validation_part(data['linhas'], 3, n_exemplos) 
+	
+	#cria os data sets a serem usados	
+	data['linhas'] = conjunto_aleatorio[0]
+	treinamento = data.copy()
+
+	data['linhas'] = conjunto_aleatorio[1]
+	teste = data.copy()
+
+	data['linhas'] = conjunto_aleatorio[2]
+	validacao = data.copy()
+
+	print("------------------Começa Poda------------------------------")
+	print("Tamanho: treino:{0} teste{1} validacao:{2}".format(len(treinamento['linhas']), len(teste['linhas']), len(validacao['linhas'])))
+
+	#CRIA O MODELO PARA PODAR
+	raiz = {}
+	data = projeta_colunas(data, config['projecao_colunas'])
+	atributo_alvo = config['atributo_alvo']
+	restantes = set(data['header'])
+	restantes.remove(atributo_alvo)
+	unicos = get_valor_unico(data)
+	#inserir o conjunto de treinamento para gerar o modelo
+	raiz = id3(treinamento, unicos, restantes, atributo_alvo)
+	print("-----------------------------****************** ACURACIA PARA CONJUNTO TREINAMENTO ANTES DA PODA*************------------------------------------")
+	erro = count_erro(raiz, teste, atributo_alvo)
+	taxa_erro = erro/len(teste['linhas'])
+	acuracia = 1-taxa_erro
+	acuracia = round(acuracia, 4)
+	print("Acuracia do modelo antes da poda:{0}".format(acuracia))
+	#FUNCAO ERRADA DE CONTAR E TALS
+	folhas, nos = imprime_lindamente_arvore_modificada(raiz)
+
 	print("Numero de folhas:{0}. Numero de nos internos:{1}".format(folhas, nos))
 	
 if __name__ == "__main__": main()
